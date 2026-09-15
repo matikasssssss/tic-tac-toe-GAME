@@ -1,121 +1,66 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react'
+import confetti from 'canvas-confetti'
+import { TURNS } from './constants'
+import { checkWinner, checkEndGame} from './logic/board'
+import { WinnerModal } from './components/WinnerModal'
+import { TurnSquare } from './components/TurnSquare'
+import { BoardGame } from './components/Board'
+import { saveGameToStorage, resetGameStorage } from './logic/storage/storage'
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [board, setBoard] = useState(() => {
+    const boardFromStorage = window.localStorage.getItem('board')
+    return boardFromStorage ? JSON.parse(boardFromStorage) :
+    Array(9).fill(null) // tablero
+  })
+    
+  const [turn, setTurn] = useState(() => {
+    const turnFromStorage = window.localStorage.getItem('turn')
+    return turnFromStorage ?? TURNS.x // turno
+  })
+
+  const [winner, setWinner] = useState(null) // ganador
+
+  const resetGame = () => {
+    setBoard(Array(9).fill(null))
+    setTurn(TURNS.x)
+    setWinner(null)
+
+    resetGameStorage()
+  }
+
+  function updateBoard(index) {
+    // chequeo si ya hay un valor en la casilla, si es así no hago nada
+    if (board[index] || winner) return
+
+    const newBoard = [...board]
+    newBoard[index] = turn
+    setBoard(newBoard)
+    const newTurn = turn === TURNS.x ? TURNS.o : TURNS.x
+    setTurn(newTurn)
+    saveGameToStorage(newBoard, newTurn)
+    
+    // reviso si hay ganador
+
+    const newWinner = checkWinner(newBoard)
+    if (newWinner) {
+      confetti()
+      setWinner(newWinner)
+    }else if (checkEndGame(newBoard)) {
+      setWinner(false) // empate
+    }
+  }
+
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <main className='board'>                                          
+      <h1>Tic Tac Toe GAME</h1>
+      <button onClick={resetGame}>Reiniciar juego</button>
+      <BoardGame board={board} updateBoard={updateBoard}/>
+      <TurnSquare turn={turn} />
+      <WinnerModal winner={winner} resetGame={resetGame} />
+    </main>
   )
 }
 
