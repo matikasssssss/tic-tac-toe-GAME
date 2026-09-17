@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import confetti from 'canvas-confetti'
 import { TURNS } from './constants'
 import { checkWinner, checkEndGame} from './logic/board'
